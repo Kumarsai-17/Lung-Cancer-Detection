@@ -479,8 +479,14 @@ def analyze_image():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
             
+            # Load CNN model on-demand
+            print("🔄 Loading CNN model for image analysis...")
+            model = load_cnn_model()
+            if model is None:
+                return render_template('result.html', error='CNN model failed to load for image analysis')
+            
             # Get correct input size from model
-            model_input_shape = cnn_model.input_shape
+            model_input_shape = model.input_shape
             if len(model_input_shape) >= 3:
                 target_size = (model_input_shape[1], model_input_shape[2])  # (height, width)
             else:
@@ -502,7 +508,7 @@ def analyze_image():
                 return render_template('result.html', error=f'Image shape mismatch. Expected: {model_input_shape[1:]}, Got: {img_array.shape[1:]}')
             
             # Prepare class information first
-            class_names = {v: k for k, v in class_indices.items()}
+            class_names = {v: k for k, v in indices.items()}
             print(f"Available classes: {list(class_names.values())}")
             
             # Find which class is "normal"
@@ -514,14 +520,11 @@ def analyze_image():
             
             print(f"Normal class index: {normal_class_idx}")
             
-            # Load CNN model and class indices on-demand
-            model = load_cnn_model()
+            # Load class indices on-demand
+            print("🔄 Loading class indices for image analysis...")
             indices = load_class_indices()
-            
-            if model is None:
-                return render_template('result.html', error='CNN model failed to load')
             if indices is None:
-                return render_template('result.html', error='Class indices failed to load')
+                return render_template('result.html', error='Class indices failed to load for image analysis')
             
             # CNN prediction
             try:
@@ -584,15 +587,15 @@ def analyze_image():
             print(f"CNN predicted class: {cnn_predicted_class}")
             print(f"CNN predicted label: {cnn_predicted_label}")
             print(f"CNN confidence: {cnn_confidence}")
-            print(f"Class indices: {class_indices}")
+            print(f"Class indices: {indices}")
             
             # Fix CNN probability interpretation
             print(f"Analyzing CNN output interpretation...")
-            print(f"Model output shape: {cnn_model.output_shape}")
+            print(f"Model output shape: {model.output_shape}")
             print(f"Raw prediction value: {cnn_prediction[0][0]}")
             
             # The model has binary output but 4 class labels
-            # This suggests it's a binary classifier (normal vs cancer) but the class_indices 
+            # This suggests it's a binary classifier (normal vs cancer) but the indices 
             # are used to determine which specific cancer type based on some other logic
             
             # Check if predicted class is normal
