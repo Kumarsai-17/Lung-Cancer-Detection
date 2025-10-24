@@ -507,6 +507,12 @@ def analyze_image():
             if img_array.shape[1:] != model_input_shape[1:]:
                 return render_template('result.html', error=f'Image shape mismatch. Expected: {model_input_shape[1:]}, Got: {img_array.shape[1:]}')
             
+            # Load class indices on-demand
+            print("🔄 Loading class indices for image analysis...")
+            indices = load_class_indices()
+            if indices is None:
+                return render_template('result.html', error='Class indices failed to load for image analysis')
+            
             # Prepare class information first
             class_names = {v: k for k, v in indices.items()}
             print(f"Available classes: {list(class_names.values())}")
@@ -519,12 +525,6 @@ def analyze_image():
                     break
             
             print(f"Normal class index: {normal_class_idx}")
-            
-            # Load class indices on-demand
-            print("🔄 Loading class indices for image analysis...")
-            indices = load_class_indices()
-            if indices is None:
-                return render_template('result.html', error='Class indices failed to load for image analysis')
             
             # CNN prediction
             try:
