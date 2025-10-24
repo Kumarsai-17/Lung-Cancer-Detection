@@ -50,48 +50,15 @@ def load_xgb_model():
                         xgb_model = value
                         print(f"   ✅ Found XGBoost model with predict method under key '{key}'")
                         break
-            if xgb_model is None:
-                for key, value in xgb_model_data.items():
-                    type_str = str(type(value)).lower()
-                    if any(term in type_str for term in ['xgb', 'boost', 'classifier', 'regressor']):
-                        xgb_model = value
-                        print(f"   ✅ Found ML model under key '{key}': {type(xgb_model)}")
-                        break
-        else:
-            xgb_model = xgb_model_data
-            print(f"   ✅ Direct model load: {type(xgb_model)}")
-        
-        # Validate XGBoost model
-        if xgb_model and hasattr(xgb_model, 'predict') and hasattr(xgb_model, 'predict_proba'):
-            print(f"   ✅ XGBoost model validation successful")
-            # Test with dummy data
-            test_data = np.zeros((1, len(FEATURE_NAMES)))
-            test_pred = xgb_model.predict(test_data)
-            test_prob = xgb_model.predict_proba(test_data)
-            print(f"   ✅ XGBoost test prediction: {test_pred}")
-            print(f"   ✅ XGBoost test probabilities shape: {test_prob.shape}")
-            print(f"   ✅ XGBoost test probabilities: {test_prob}")
-            
-            # Check if it's binary or multi-class
-            if test_prob.shape[1] == 2:
-                print(f"   📊 Binary classification detected")
-            elif test_prob.shape[1] == 3:
-                print(f"   📊 3-class classification detected")
-            else:
-                print(f"   📊 {test_prob.shape[1]}-class classification detected")
-                
-        else:
-            print(f"   ❌ XGBoost model validation failed - missing predict methods")
-            xgb_model = None
-            
-    except Exception as e:
-        print(f"   ❌ Error loading XGBoost model: {e}")
-        xgb_model = None
         else:
             xgb_model = xgb_model_data
             print(f"   ✅ XGBoost model loaded directly: {type(xgb_model)}")
         
         return xgb_model
+        
+    except Exception as e:
+        print(f"   ❌ Error loading XGBoost model: {e}")
+        return None
         
     except Exception as e:
         print(f"   ❌ Error loading XGBoost model: {e}")
