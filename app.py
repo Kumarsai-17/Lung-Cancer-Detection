@@ -30,34 +30,61 @@ def load_xgb_model():
         
     print("📊 Loading XGBoost model...")
     try:
+        # Check if file exists
+        if not os.path.exists('models/xgb_model.pkl'):
+            print("   ❌ XGBoost model file not found!")
+            return None
+            
         with open('models/xgb_model.pkl', 'rb') as f:
             xgb_model_data = pickle.load(f)
         
+        print(f"   📦 Loaded data type: {type(xgb_model_data)}")
+        
         # If it's a dictionary, try to extract the actual model
         if isinstance(xgb_model_data, dict):
-            possible_keys = ['model', 'xgb_model', 'classifier', 'estimator', 'best_estimator_', 'xgboost_model']
+            print(f"   🔑 Dictionary keys: {list(xgb_model_data.keys())}")
             
-            for key in possible_keys:
-                if key in xgb_model_data:
-                    xgb_model = xgb_model_data[key]
-                    print(f"   ✅ Found XGBoost model under key '{key}'")
-                    break
-            
-            # If no common key found, try to find any object with predict method
-            if xgb_model is None:
-                for key, value in xgb_model_data.items():
-                    if hasattr(value, 'predict') and hasattr(value, 'predict_proba'):
-                        xgb_model = value
-                        print(f"   ✅ Found XGBoost model with predict method under key '{key}'")
+            # Try the 'model' key first (we know it exists)
+            if 'model' in xgb_model_data:
+                xgb_model = xgb_model_data['model']
+                print(f"   ✅ Found XGBoost model under 'model' key: {type(xgb_model)}")
+            else:
+                # Fallback to other possible keys
+                possible_keys = ['xgb_model', 'classifier', 'estimator', 'best_estimator_', 'xgboost_model']
+                
+                for key in possible_keys:
+                    if key in xgb_model_data:
+                        xgb_model = xgb_model_data[key]
+                        print(f"   ✅ Found XGBoost model under key '{key}': {type(xgb_model)}")
                         break
+                
+                # If still no model found, try to find any object with predict method
+                if xgb_model is None:
+                    for key, value in xgb_model_data.items():
+                        if hasattr(value, 'predict') and hasattr(value, 'predict_proba'):
+                            xgb_model = value
+                            print(f"   ✅ Found XGBoost model with predict method under key '{key}': {type(xgb_model)}")
+                            break
         else:
             xgb_model = xgb_model_data
             print(f"   ✅ XGBoost model loaded directly: {type(xgb_model)}")
         
+        # Validate the model
+        if xgb_model is None:
+            print("   ❌ No valid XGBoost model found in the file")
+            return None
+            
+        if not (hasattr(xgb_model, 'predict') and hasattr(xgb_model, 'predict_proba')):
+            print(f"   ❌ Model missing required methods: {type(xgb_model)}")
+            return None
+            
+        print(f"   ✅ XGBoost model validation successful: {type(xgb_model)}")
         return xgb_model
         
     except Exception as e:
         print(f"   ❌ Error loading XGBoost model: {e}")
+        import traceback
+        traceback.print_exc()
         return None
         
     except Exception as e:
@@ -681,15 +708,62 @@ def test_model_predictions():
         import traceback
         traceback.print_exc()
 
+@app.route('/debug_models')
+def debug_models():
+    """Debug model loading issues"""
+    try:
+        debug_info = {
+            "model_files": {
+                "xgb_model.pkl": os.path.exists('models/xgb_model.pkl'),
+                "cnn_model.h5": os.path.exists('models/cnn_model.h5'),
+                "class_indices.pkl": os.path.exists('models/class_indices.pkl')
+            },
+            "current_models": {
+                "xgb_model": xgb_model is not None,
+                "cnn_model": cnn_model is not None,
+                "class_indices": class_indices is not None
+            }
+        }
+        
+        # Try to load XGBoost model and get detailed info
+        try:
+            with open('models/xgb_model.pkl', 'rb') as f:
+                model_data = pickle.load(f)
+            debug_info["xgb_file_structure"] = {
+                "type": str(type(model_data)),
+                "keys": list(model_data.keys()) if isinstance(model_data, dict) else "Not a dict"
+            }
+        except Exception as e:
+            debug_info["xgb_file_error"] = str(e)
+            
+        return debug_info
+        
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.route('/reload_models')
 def reload_models():
     """Reload all models - useful for development"""
+    global xgb_model, cnn_model, class_indices
     try:
-        success = load_models()
-        if success:
-            return {"status": "success", "message": "All models reloaded successfully"}
-        else:
-            return {"status": "partial", "message": "Some models failed to reload"}
+        # Reset models
+        xgb_model = None
+        cnn_model = None
+        class_indices = None
+        
+        # Try to load each model
+        xgb_loaded = load_xgb_model() is not None
+        cnn_loaded = load_cnn_model() is not None
+        indices_loaded = load_class_indices() is not None
+        
+        return {
+            "status": "success" if all([xgb_loaded, cnn_loaded, indices_loaded]) else "partial",
+            "models": {
+                "xgb_model": xgb_loaded,
+                "cnn_model": cnn_loaded,
+                "class_indices": indices_loaded
+            }
+        }
     except Exception as e:
         return {"status": "error", "message": f"Error reloading models: {str(e)}"}
 
