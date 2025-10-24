@@ -58,44 +58,48 @@ def load_xgb_model():
         print(f"   📦 Loaded data type: {type(xgb_model_data)}")
         
         # If it's a dictionary, try to extract the actual model
+        loaded_model = None
         if isinstance(xgb_model_data, dict):
             print(f"   🔑 Dictionary keys: {list(xgb_model_data.keys())}")
             
             # Try the 'model' key first (we know it exists)
             if 'model' in xgb_model_data:
-                xgb_model = xgb_model_data['model']
-                print(f"   ✅ Found XGBoost model under 'model' key: {type(xgb_model)}")
+                loaded_model = xgb_model_data['model']
+                print(f"   ✅ Found XGBoost model under 'model' key: {type(loaded_model)}")
             else:
                 # Fallback to other possible keys
                 possible_keys = ['xgb_model', 'classifier', 'estimator', 'best_estimator_', 'xgboost_model']
                 
                 for key in possible_keys:
                     if key in xgb_model_data:
-                        xgb_model = xgb_model_data[key]
-                        print(f"   ✅ Found XGBoost model under key '{key}': {type(xgb_model)}")
+                        loaded_model = xgb_model_data[key]
+                        print(f"   ✅ Found XGBoost model under key '{key}': {type(loaded_model)}")
                         break
                 
                 # If still no model found, try to find any object with predict method
-                if xgb_model is None:
+                if loaded_model is None:
                     for key, value in xgb_model_data.items():
                         if hasattr(value, 'predict') and hasattr(value, 'predict_proba'):
-                            xgb_model = value
-                            print(f"   ✅ Found XGBoost model with predict method under key '{key}': {type(xgb_model)}")
+                            loaded_model = value
+                            print(f"   ✅ Found XGBoost model with predict method under key '{key}': {type(loaded_model)}")
                             break
         else:
-            xgb_model = xgb_model_data
-            print(f"   ✅ XGBoost model loaded directly: {type(xgb_model)}")
+            loaded_model = xgb_model_data
+            print(f"   ✅ XGBoost model loaded directly: {type(loaded_model)}")
         
         # Validate the model
-        if xgb_model is None:
+        if loaded_model is None:
             print("   ❌ No valid XGBoost model found in the file")
             return None
             
-        if not (hasattr(xgb_model, 'predict') and hasattr(xgb_model, 'predict_proba')):
-            print(f"   ❌ Model missing required methods: {type(xgb_model)}")
+        if not (hasattr(loaded_model, 'predict') and hasattr(loaded_model, 'predict_proba')):
+            print(f"   ❌ Model missing required methods: {type(loaded_model)}")
             return None
             
+        # Assign to global variable
+        xgb_model = loaded_model
         print(f"   ✅ XGBoost model validation successful: {type(xgb_model)}")
+        print(f"   ✅ Global variable assigned: {xgb_model is not None}")
         return xgb_model
         
     except Exception as e:
@@ -287,9 +291,13 @@ def analyze_features():
             return render_template('result.html', error='Invalid feature values detected (NaN or Inf)')
         
         # Load XGBoost model on-demand
+        print("🔄 Attempting to load XGBoost model...")
         model = load_xgb_model()
         if model is None:
-            return render_template('result.html', error='XGBoost model failed to load')
+            print("❌ XGBoost model loading failed!")
+            return render_template('result.html', error='XGBoost model failed to load. Please check the debug routes: /test_imports and /debug_models')
+        else:
+            print(f"✅ XGBoost model loaded successfully: {type(model)}")
         
         # XGBoost prediction
         features_array = np.array([features])
@@ -753,6 +761,51 @@ def test_imports():
     
     return import_status
 
+@app.route('/test_xgb_model')
+def test_xgb_model():
+    """Test XGBoost model loading and prediction"""
+    result = {"timestamp": str(pd.Timestamp.now())}
+    
+    try:
+        # Test model loading
+        print("Testing XGBoost model loading...")
+        model = load_xgb_model()
+        
+        if model is None:
+            result["status"] = "❌ FAILED"
+            result["error"] = "Model loading returned None"
+            return result
+        
+        result["model_type"] = str(type(model))
+        result["model_loaded"] = "✅ SUCCESS"
+        
+        # Test prediction with dummy data
+        try:
+            dummy_features = np.zeros((1, len(FEATURE_NAMES)))
+            dummy_features[0][0] = 30  # age
+            dummy_features[0][1] = 1   # gender
+            
+            prediction = model.predict(dummy_features)
+            probability = model.predict_proba(dummy_features)
+            
+            result["prediction_test"] = "✅ SUCCESS"
+            result["dummy_prediction"] = str(prediction[0])
+            result["dummy_probability"] = str(probability[0].tolist())
+            result["status"] = "✅ ALL TESTS PASSED"
+            
+        except Exception as pred_error:
+            result["prediction_test"] = "❌ FAILED"
+            result["prediction_error"] = str(pred_error)
+            result["status"] = "⚠️ MODEL LOADED BUT PREDICTION FAILED"
+            
+    except Exception as e:
+        result["status"] = "❌ FAILED"
+        result["error"] = str(e)
+        import traceback
+        result["traceback"] = traceback.format_exc()
+    
+    return result
+
 @app.route('/debug_models')
 def debug_models():
     """Debug model loading issues"""
@@ -802,6 +855,42 @@ def debug_models():
     except Exception as e:
         import traceback
         return {"error": str(e), "traceback": traceback.format_exc()}
+
+@app.route('/force_load_xgb')
+def force_load_xgb():
+    """Force load XGBoost model and show detailed output"""
+    global xgb_model
+    
+    # Reset the model
+    xgb_model = None
+    
+    # Capture all print output
+    import io
+    import sys
+    
+    old_stdout = sys.stdout
+    sys.stdout = captured_output = io.StringIO()
+    
+    try:
+        model = load_xgb_model()
+        success = model is not None
+    except Exception as e:
+        success = False
+        print(f"Exception during loading: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        sys.stdout = old_stdout
+    
+    output = captured_output.getvalue()
+    
+    return {
+        "success": success,
+        "model_loaded": xgb_model is not None,
+        "model_type": str(type(xgb_model)) if xgb_model else "None",
+        "output": output,
+        "xgboost_available": XGBOOST_AVAILABLE
+    }
 
 @app.route('/reload_models')
 def reload_models():
