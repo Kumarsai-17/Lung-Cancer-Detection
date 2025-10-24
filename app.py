@@ -221,15 +221,20 @@ def analyze_features():
     try:
         print("Form data received:", dict(request.form))  # Debug print
         
-        # Check if models are loaded
-        if xgb_model is None:
-            return render_template('result.html', error='XGBoost model not loaded. Please check model files.')
+        # Load XGBoost model on-demand
+        print("🔄 Attempting to load XGBoost model at start of analyze_features...")
+        model = load_xgb_model()
+        if model is None:
+            print("❌ XGBoost model loading failed at start!")
+            return render_template('result.html', error='XGBoost model failed to load. Please check the debug routes: /test_imports and /debug_models')
+        else:
+            print(f"✅ XGBoost model loaded successfully at start: {type(model)}")
         
         # Test model with a simple prediction to ensure it works
         try:
             test_features = np.zeros((1, len(FEATURE_NAMES)))
-            test_pred = xgb_model.predict(test_features)
-            test_prob = xgb_model.predict_proba(test_features)
+            test_pred = model.predict(test_features)
+            test_prob = model.predict_proba(test_features)
             print(f"Model test successful. Test prediction: {test_pred}, Test probability: {test_prob}")
         except Exception as model_test_error:
             return render_template('result.html', error=f'Model test failed: {str(model_test_error)}')
