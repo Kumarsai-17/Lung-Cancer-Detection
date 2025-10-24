@@ -22,31 +22,25 @@ xgb_model = None
 cnn_model = None
 class_indices = None
 
-def load_models():
-    """Load all ML models with comprehensive error handling"""
-    global xgb_model, cnn_model, class_indices
-    
-    print("🔄 Loading ML models...")
-    
-    # Load XGBoost model
+def load_xgb_model():
+    """Load XGBoost model on-demand"""
+    global xgb_model
+    if xgb_model is not None:
+        return xgb_model
+        
+    print("📊 Loading XGBoost model...")
     try:
-        print("📊 Loading XGBoost model...")
         with open('models/xgb_model.pkl', 'rb') as f:
             xgb_model_data = pickle.load(f)
         
-        print(f"   Loaded data type: {type(xgb_model_data)}")
-        
         # If it's a dictionary, try to extract the actual model
         if isinstance(xgb_model_data, dict):
-            print(f"   Dictionary keys: {list(xgb_model_data.keys())}")
-            
-            # Try common key names
             possible_keys = ['model', 'xgb_model', 'classifier', 'estimator', 'best_estimator_', 'xgboost_model']
             
             for key in possible_keys:
                 if key in xgb_model_data:
                     xgb_model = xgb_model_data[key]
-                    print(f"   ✅ Found model under key '{key}': {type(xgb_model)}")
+                    print(f"   ✅ Found XGBoost model under key '{key}'")
                     break
             
             # If no common key found, try to find any object with predict method
@@ -54,10 +48,8 @@ def load_models():
                 for key, value in xgb_model_data.items():
                     if hasattr(value, 'predict') and hasattr(value, 'predict_proba'):
                         xgb_model = value
-                        print(f"   ✅ Found model with predict method under key '{key}': {type(xgb_model)}")
+                        print(f"   ✅ Found XGBoost model with predict method under key '{key}'")
                         break
-            
-            # If still no model found, use the first value that looks like a model
             if xgb_model is None:
                 for key, value in xgb_model_data.items():
                     type_str = str(type(value)).lower()
@@ -95,44 +87,62 @@ def load_models():
     except Exception as e:
         print(f"   ❌ Error loading XGBoost model: {e}")
         xgb_model = None
-    
-    # Load CNN model
+        else:
+            xgb_model = xgb_model_data
+            print(f"   ✅ XGBoost model loaded directly: {type(xgb_model)}")
+        
+        return xgb_model
+        
+    except Exception as e:
+        print(f"   ❌ Error loading XGBoost model: {e}")
+        return None
+
+def load_cnn_model():
+    """Load CNN model on-demand"""
+    global cnn_model
+    if cnn_model is not None:
+        return cnn_model
+        
+    print("🧠 Loading CNN model...")
     try:
-        print("🧠 Loading CNN model...")
         cnn_model = load_model('models/cnn_model.h5')
-        print(f"   ✅ CNN model loaded: {type(cnn_model)}")
-        print(f"   📐 Input shape: {cnn_model.input_shape}")
-        print(f"   📐 Output shape: {cnn_model.output_shape}")
-        print(f"   🔢 Parameters: {cnn_model.count_params():,}")
+        print(f"   ✅ CNN model loaded successfully")
+        return cnn_model
         
     except Exception as e:
         print(f"   ❌ Error loading CNN model: {e}")
-        cnn_model = None
-    
-    # Load class indices
+        return None
+
+def load_class_indices():
+    """Load class indices on-demand"""
+    global class_indices
+    if class_indices is not None:
+        return class_indices
+        
+    print("🏷️  Loading class indices...")
     try:
-        print("🏷️  Loading class indices...")
         with open('models/class_indices.pkl', 'rb') as f:
             class_indices = pickle.load(f)
         print(f"   ✅ Class indices loaded: {len(class_indices)} classes")
-        print(f"   📋 Classes: {list(class_indices.keys())}")
+        return class_indices
         
     except Exception as e:
         print(f"   ❌ Error loading class indices: {e}")
-        class_indices = None
+        return None
+
+def check_models():
+    """Check if model files exist without loading them"""
+    models_status = {
+        'xgb_model': os.path.exists('models/xgb_model.pkl'),
+        'cnn_model': os.path.exists('models/cnn_model.h5'),
+        'class_indices': os.path.exists('models/class_indices.pkl')
+    }
     
-    # Summary
-    print("\n📊 MODEL LOADING SUMMARY:")
-    print(f"   XGBoost Model: {'✅ Loaded' if xgb_model else '❌ Failed'}")
-    print(f"   CNN Model: {'✅ Loaded' if cnn_model else '❌ Failed'}")
-    print(f"   Class Indices: {'✅ Loaded' if class_indices else '❌ Failed'}")
+    print("📊 MODEL FILES CHECK:")
+    for model, exists in models_status.items():
+        print(f"   {model}: {'✅ Found' if exists else '❌ Missing'}")
     
-    if xgb_model and cnn_model and class_indices:
-        print("   🎉 All models loaded successfully!")
-        return True
-    else:
-        print("   ⚠️  Some models failed to load - check model files")
-        return False
+    return all(models_status.values())
 
 # Feature names for XGB model
 FEATURE_NAMES = [
@@ -144,8 +154,9 @@ FEATURE_NAMES = [
     'clubbing_of_finger_nails', 'frequent_cold', 'dry_cough', 'snoring'
 ]
 
-# Load models on startup
-load_models()
+# Check model files on startup (don't load them yet to save memory)
+print("🚀 Starting LungCare AI...")
+check_models()
 
 @app.route('/')
 def index():
@@ -264,13 +275,18 @@ def analyze_features():
         if any(not isinstance(f, (int, float)) or np.isnan(f) or np.isinf(f) for f in features):
             return render_template('result.html', error='Invalid feature values detected (NaN or Inf)')
         
+        # Load XGBoost model on-demand
+        model = load_xgb_model()
+        if model is None:
+            return render_template('result.html', error='XGBoost model failed to load')
+        
         # XGBoost prediction
         features_array = np.array([features])
         print("Features array shape:", features_array.shape)
         print("Features array:", features_array)
         
-        xgb_prediction = xgb_model.predict(features_array)[0]
-        xgb_probability = xgb_model.predict_proba(features_array)[0]
+        xgb_prediction = model.predict(features_array)[0]
+        xgb_probability = model.predict_proba(features_array)[0]
         
         print("XGBoost prediction:", xgb_prediction)  # Debug print
         print("XGBoost probability:", xgb_probability)  # Debug print
@@ -467,10 +483,19 @@ def analyze_image():
             
             print(f"Normal class index: {normal_class_idx}")
             
+            # Load CNN model and class indices on-demand
+            model = load_cnn_model()
+            indices = load_class_indices()
+            
+            if model is None:
+                return render_template('result.html', error='CNN model failed to load')
+            if indices is None:
+                return render_template('result.html', error='Class indices failed to load')
+            
             # CNN prediction
             try:
                 print("Making CNN prediction...")
-                cnn_prediction = cnn_model.predict(img_array)
+                cnn_prediction = model.predict(img_array)
                 print(f"CNN prediction shape: {cnn_prediction.shape}")
                 print(f"CNN raw prediction: {cnn_prediction}")
                 
@@ -702,17 +727,6 @@ def reload_models():
         return {"status": "error", "message": f"Error reloading models: {str(e)}"}
 
 if __name__ == '__main__':
-    # Test models when app starts (only if loaded successfully)
-    if xgb_model and cnn_model:
-        print("🧪 Running basic model tests...")
-        try:
-            test_model_predictions()
-        except Exception as e:
-            print(f"⚠️  Model test failed: {e}")
-    else:
-        print("⚠️  Models not loaded properly - skipping accuracy tests")
-        print("💡 Check model files in the 'models/' directory")
-    
     print("🚀 Starting Flask application...")
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
