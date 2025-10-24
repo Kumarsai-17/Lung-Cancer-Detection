@@ -9,6 +9,15 @@ from werkzeug.utils import secure_filename
 import cv2
 from PIL import Image
 
+# Test XGBoost import
+try:
+    import xgboost as xgb
+    print("✅ XGBoost imported successfully")
+    XGBOOST_AVAILABLE = True
+except ImportError as e:
+    print(f"❌ XGBoost import failed: {e}")
+    XGBOOST_AVAILABLE = False
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -29,11 +38,19 @@ def load_xgb_model():
         return xgb_model
         
     print("📊 Loading XGBoost model...")
+    
+    # Check if XGBoost is available
+    if not XGBOOST_AVAILABLE:
+        print("   ❌ XGBoost library not available!")
+        return None
+    
     try:
         # Check if file exists
         if not os.path.exists('models/xgb_model.pkl'):
             print("   ❌ XGBoost model file not found!")
             return None
+            
+        print(f"   📁 Model file exists, size: {os.path.getsize('models/xgb_model.pkl')} bytes")
             
         with open('models/xgb_model.pkl', 'rb') as f:
             xgb_model_data = pickle.load(f)
@@ -708,11 +725,40 @@ def test_model_predictions():
         import traceback
         traceback.print_exc()
 
+@app.route('/test_imports')
+def test_imports():
+    """Test if all required libraries can be imported"""
+    import_status = {}
+    
+    # Test XGBoost
+    try:
+        import xgboost as xgb
+        import_status["xgboost"] = {"status": "✅ OK", "version": xgb.__version__}
+    except Exception as e:
+        import_status["xgboost"] = {"status": "❌ FAILED", "error": str(e)}
+    
+    # Test scikit-learn
+    try:
+        import sklearn
+        import_status["sklearn"] = {"status": "✅ OK", "version": sklearn.__version__}
+    except Exception as e:
+        import_status["sklearn"] = {"status": "❌ FAILED", "error": str(e)}
+    
+    # Test TensorFlow
+    try:
+        import tensorflow as tf
+        import_status["tensorflow"] = {"status": "✅ OK", "version": tf.__version__}
+    except Exception as e:
+        import_status["tensorflow"] = {"status": "❌ FAILED", "error": str(e)}
+    
+    return import_status
+
 @app.route('/debug_models')
 def debug_models():
     """Debug model loading issues"""
     try:
         debug_info = {
+            "xgboost_available": XGBOOST_AVAILABLE,
             "model_files": {
                 "xgb_model.pkl": os.path.exists('models/xgb_model.pkl'),
                 "cnn_model.h5": os.path.exists('models/cnn_model.h5'),
@@ -726,20 +772,36 @@ def debug_models():
         }
         
         # Try to load XGBoost model and get detailed info
-        try:
-            with open('models/xgb_model.pkl', 'rb') as f:
-                model_data = pickle.load(f)
-            debug_info["xgb_file_structure"] = {
-                "type": str(type(model_data)),
-                "keys": list(model_data.keys()) if isinstance(model_data, dict) else "Not a dict"
-            }
-        except Exception as e:
-            debug_info["xgb_file_error"] = str(e)
+        if os.path.exists('models/xgb_model.pkl'):
+            try:
+                with open('models/xgb_model.pkl', 'rb') as f:
+                    model_data = pickle.load(f)
+                debug_info["xgb_file_structure"] = {
+                    "type": str(type(model_data)),
+                    "keys": list(model_data.keys()) if isinstance(model_data, dict) else "Not a dict"
+                }
+                
+                # Try to access the model
+                if isinstance(model_data, dict) and 'model' in model_data:
+                    model = model_data['model']
+                    debug_info["model_details"] = {
+                        "type": str(type(model)),
+                        "has_predict": hasattr(model, 'predict'),
+                        "has_predict_proba": hasattr(model, 'predict_proba')
+                    }
+                    
+            except Exception as e:
+                debug_info["xgb_file_error"] = str(e)
+                import traceback
+                debug_info["xgb_traceback"] = traceback.format_exc()
+        else:
+            debug_info["xgb_file_error"] = "File does not exist"
             
         return debug_info
         
     except Exception as e:
-        return {"error": str(e)}
+        import traceback
+        return {"error": str(e), "traceback": traceback.format_exc()}
 
 @app.route('/reload_models')
 def reload_models():
