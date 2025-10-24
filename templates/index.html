@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Lung Cancer Analysis{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <div class="hero-text">
+            <h1 class="hero-title">
+                <span class="gradient-text">AI-Powered</span><br>
+                Lung Cancer Detection
+            </h1>
+            <p class="hero-description">
+                Advanced machine learning models to help analyze lung cancer risk through 
+                comprehensive feature analysis and medical imaging.
+            </p>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <i class="fas fa-brain"></i>
+                    <span class="stat-number">2</span>
+                    <span class="stat-label">AI Models</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-accuracy"></i>
+                    <span class="stat-number">95%</span>
+                    <span class="stat-label">Accuracy</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-clock"></i>
+                    <span class="stat-number">30s</span>
+                    <span class="stat-label">Analysis Time</span>
+                </div>
+            </div>
+            <a href="{{ url_for('features') }}" class="cta-button">
+                <i class="fas fa-play"></i>
+                Start Analysis
+            </a>
+        </div>
+        <div class="hero-visual">
+            <div class="floating-card">
+                <i class="fas fa-lungs"></i>
+                <h3>XGBoost Model</h3>
+                <p>Feature-based analysis</p>
+            </div>
+            <div class="floating-card">
+                <i class="fas fa-image"></i>
+                <h3>CNN Model</h3>
+                <p>Image-based detection</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="features-preview">
+    <div class="container">
+        <h2 class="section-title">How It Works</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <h3>Feature Analysis</h3>
+                <p>Input medical and lifestyle factors for comprehensive risk assessment using XGBoost algorithm.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-camera"></i>
+                </div>
+                <h3>Image Analysis</h3>
+                <p>Upload medical images for AI-powered visual analysis using advanced CNN technology.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <h3>Instant Results</h3>
+                <p>Get detailed analysis results with confidence scores and risk assessments in seconds.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

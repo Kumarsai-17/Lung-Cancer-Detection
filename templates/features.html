@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}Medical Assessment - Lung Cancer Detection{% endblock %}
+
+{% block content %}
+<div class="analysis-header">
+    <div class="container">
+        <h1 class="page-title">
+            <i class="fas fa-clipboard-list"></i>
+            Medical & Lifestyle Assessment
+        </h1>
+        <p class="page-description">Please provide accurate information for comprehensive lung cancer risk analysis</p>
+    </div>
+</div>
+
+<div class="feature-form-section">
+    <div class="container">
+        <form id="features-form" action="{{ url_for('analyze_features') }}" method="POST" class="features-form">
+            <div class="form-sections">
+                <!-- Demographics Section -->
+                <div class="form-section">
+                    <h3><i class="fas fa-user"></i> Demographics</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="age">Age</label>
+                            <input type="number" id="age" name="age" min="0" max="120" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="gender">Gender</label>
+                            <select id="gender" name="gender" required>
+                                <option value="">Select Gender</option>
+                                <option value="1">Male</option>
+                                <option value="0">Female</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Environmental Factors -->
+                <div class="form-section">
+                    <h3><i class="fas fa-leaf"></i> Environmental Factors</h3>
+                    <div class="checkbox-grid">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="air_pollution" name="air_pollution" value="1">
+                            <label for="air_pollution">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Air Pollution Exposure</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dust_allergy" name="dust_allergy" value="1">
+                            <label for="dust_allergy">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Dust Allergy</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="occupational_hazards" name="occupational_hazards" value="1">
+                            <label for="occupational_hazards">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Occupational Hazards</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lifestyle Factors -->
+                <div class="form-section">
+                    <h3><i class="fas fa-heart"></i> Lifestyle Factors</h3>
+                    <div class="checkbox-grid">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="alcohol_use" name="alcohol_use" value="1">
+                            <label for="alcohol_use">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Alcohol Use</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="smoking" name="smoking" value="1">
+                            <label for="smoking">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Smoking</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="passive_smoker" name="passive_smoker" value="1">
+                            <label for="passive_smoker">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Passive Smoker</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="balanced_diet" name="balanced_diet" value="1">
+                            <label for="balanced_diet">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Balanced Diet</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="obesity" name="obesity" value="1">
+                            <label for="obesity">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Obesity</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medical History -->
+                <div class="form-section">
+                    <h3><i class="fas fa-stethoscope"></i> Medical History</h3>
+                    <div class="checkbox-grid">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="genetic_risk" name="genetic_risk" value="1">
+                            <label for="genetic_risk">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Genetic Risk</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="chronic_lung_disease" name="chronic_lung_disease" value="1">
+                            <label for="chronic_lung_disease">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Chronic Lung Disease</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Symptoms -->
+                <div class="form-section">
+                    <h3><i class="fas fa-thermometer"></i> Current Symptoms</h3>
+                    <div class="checkbox-grid">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="chest_pain" name="chest_pain" value="1">
+                            <label for="chest_pain">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Chest Pain</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="coughing_of_blood" name="coughing_of_blood" value="1">
+                            <label for="coughing_of_blood">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Coughing Blood</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="fatigue" name="fatigue" value="1">
+                            <label for="fatigue">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Fatigue</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="weight_loss" name="weight_loss" value="1">
+                            <label for="weight_loss">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Weight Loss</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="shortness_of_breath" name="shortness_of_breath" value="1">
+                            <label for="shortness_of_breath">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Shortness of Breath</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="wheezing" name="wheezing" value="1">
+                            <label for="wheezing">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Wheezing</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="swallowing_difficulty" name="swallowing_difficulty" value="1">
+                            <label for="swallowing_difficulty">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Swallowing Difficulty</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="clubbing_of_finger_nails" name="clubbing_of_finger_nails" value="1">
+                            <label for="clubbing_of_finger_nails">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Clubbing of Finger Nails</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="frequent_cold" name="frequent_cold" value="1">
+                            <label for="frequent_cold">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Frequent Cold</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dry_cough" name="dry_cough" value="1">
+                            <label for="dry_cough">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Dry Cough</span>
+                            </label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="snoring" name="snoring" value="1">
+                            <label for="snoring">
+                                <span class="checkmark"></span>
+                                <span class="label-text">Snoring</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Upload Option -->
+            <div class="form-section">
+                <h3><i class="fas fa-image"></i> Medical Image (Optional)</h3>
+                <div class="image-option-section">
+                    <p class="image-option-description">Do you have a lung CT scan or X-ray image to upload for additional analysis?</p>
+                    <div class="image-choice">
+                        <div class="choice-item">
+                            <input type="radio" id="no_image" name="upload_image" value="no" checked>
+                            <label for="no_image" class="choice-label">
+                                <i class="fas fa-times-circle"></i>
+                                <span>No, analyze with features only</span>
+                            </label>
+                        </div>
+                        <div class="choice-item">
+                            <input type="radio" id="yes_image" name="upload_image" value="yes">
+                            <label for="yes_image" class="choice-label">
+                                <i class="fas fa-upload"></i>
+                                <span>Yes, I have a medical image to upload</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('index') }}" class="btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Home
+                </a>
+                <button type="submit" class="btn-primary" id="analyze-btn">
+                    <i class="fas fa-chart-line"></i>
+                    Start Analysis
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// No date field to set
+
+// Form submission with loading state
+document.getElementById('features-form').addEventListener('submit', function(e) {
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const hasImage = document.getElementById('yes_image').checked;
+    
+    if (hasImage) {
+        analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    } else {
+        analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+    }
+    analyzeBtn.disabled = true;
+});
+
+// Update button text based on image choice
+document.querySelectorAll('input[name="upload_image"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        const analyzeBtn = document.getElementById('analyze-btn');
+        if (this.value === 'yes') {
+            analyzeBtn.innerHTML = '<i class="fas fa-arrow-right"></i> Continue to Image Upload';
+        } else {
+            analyzeBtn.innerHTML = '<i class="fas fa-chart-line"></i> Start Analysis';
+        }
+    });
+});
+</script>
+{% endblock %}

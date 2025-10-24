@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Image Upload - Lung Cancer Detection{% endblock %}
+
+{% block content %}
+<div class="upload-header">
+    <div class="container">
+        <h1 class="page-title">
+            <i class="fas fa-upload"></i>
+            Medical Image Analysis
+        </h1>
+        <p class="page-description">Upload a medical image for AI-powered lung cancer detection</p>
+    </div>
+</div>
+
+<div class="upload-section">
+    <div class="container">
+        <div class="upload-container">
+            <form id="upload-form" action="{{ url_for('analyze_image') }}" method="POST" enctype="multipart/form-data">
+                <div class="upload-area" id="upload-area">
+                    <div class="upload-content">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h3>Drop your image here</h3>
+                        <p>or click to browse files</p>
+                        <input type="file" id="image-input" name="image" accept="image/*" required>
+                        <div class="upload-info">
+                            <span class="info-item"><i class="fas fa-check"></i> JPG, PNG, JPEG supported</span>
+                            <span class="info-item"><i class="fas fa-check"></i> Max size: 16MB</span>
+                            <span class="info-item"><i class="fas fa-check"></i> High resolution recommended</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="image-preview" id="image-preview" style="display: none;">
+                    <div class="preview-header">
+                        <h4><i class="fas fa-eye"></i> Image Preview</h4>
+                        <button type="button" class="remove-image" onclick="removeImage()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="preview-content">
+                        <img id="preview-img" src="" alt="Preview">
+                        <div class="image-info">
+                            <span id="image-name"></span>
+                            <span id="image-size"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="upload-actions">
+                    <a href="{{ url_for('features') }}" class="btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Features
+                    </a>
+                    <button type="button" class="btn-outline" id="skip-btn" onclick="skipImageUpload()">
+                        <i class="fas fa-forward"></i>
+                        Skip Image & Get Results
+                    </button>
+                    <button type="submit" class="btn-primary" id="analyze-btn" disabled>
+                        <i class="fas fa-brain"></i>
+                        Analyze with Image
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="upload-guidelines">
+            <h3><i class="fas fa-info-circle"></i> Image Guidelines</h3>
+            <div class="guidelines-grid">
+                <div class="guideline-item">
+                    <i class="fas fa-image"></i>
+                    <h4>Image Quality</h4>
+                    <p>Use high-resolution medical images for better accuracy</p>
+                </div>
+                <div class="guideline-item">
+                    <i class="fas fa-file-medical"></i>
+                    <h4>Medical Images</h4>
+                    <p>CT scans, X-rays, or other lung imaging preferred</p>
+                </div>
+                <div class="guideline-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <h4>Privacy</h4>
+                    <p>Images are processed securely and not stored permanently</p>
+                </div>
+                <div class="guideline-item">
+                    <i class="fas fa-clock"></i>
+                    <h4>Processing Time</h4>
+                    <p>Analysis typically takes 10-30 seconds</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const uploadArea = document.getElementById('upload-area');
+const imageInput = document.getElementById('image-input');
+const imagePreview = document.getElementById('image-preview');
+const previewImg = document.getElementById('preview-img');
+const imageName = document.getElementById('image-name');
+const imageSize = document.getElementById('image-size');
+const analyzeBtn = document.getElementById('analyze-btn');
+
+let isProcessingFile = false;
+
+// Click to upload
+uploadArea.addEventListener('click', (e) => {
+    // Prevent multiple clicks
+    if (isProcessingFile) return;
+    imageInput.click();
+});
+
+// Drag and drop
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('drag-over');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('drag-over');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('drag-over');
+    if (isProcessingFile) return;
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleFile(files[0]);
+    }
+});
+
+// File input change
+imageInput.addEventListener('change', (e) => {
+    if (isProcessingFile) return;
+    
+    if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+    }
+});
+
+function handleFile(file) {
+    if (isProcessingFile) return;
+    isProcessingFile = true;
+    
+    if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file.');
+        isProcessingFile = false;
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        previewImg.src = e.target.result;
+        imageName.textContent = file.name;
+        imageSize.textContent = formatFileSize(file.size);
+        
+        uploadArea.style.display = 'none';
+        imagePreview.style.display = 'block';
+        analyzeBtn.disabled = false;
+        isProcessingFile = false;
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeImage() {
+    imageInput.value = '';
+    uploadArea.style.display = 'block';
+    imagePreview.style.display = 'none';
+    analyzeBtn.disabled = true;
+    isProcessingFile = false;
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Form submission with loading state
+document.getElementById('upload-form').addEventListener('submit', function(e) {
+    analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+    analyzeBtn.disabled = true;
+});
+
+// Skip image upload function
+function skipImageUpload() {
+    // Create a form to submit without image
+    const skipForm = document.createElement('form');
+    skipForm.method = 'POST';
+    skipForm.action = '/skip_image';
+    skipForm.style.display = 'none';
+    document.body.appendChild(skipForm);
+    skipForm.submit();
+}
+</script>
+{% endblock %}

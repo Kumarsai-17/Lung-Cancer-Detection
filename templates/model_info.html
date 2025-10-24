@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Model Information - Lung Cancer Detection{% endblock %}
+
+{% block content %}
+<div class="analysis-header">
+    <div class="container">
+        <h1 class="page-title">
+            <i class="fas fa-chart-bar"></i>
+            Model Performance & Accuracy
+        </h1>
+        <p class="page-description">Detailed information about the AI models used for lung cancer detection</p>
+    </div>
+</div>
+
+<div class="model-info-section">
+    <div class="container">
+        {% if error %}
+        <div class="error-card">
+            <h3>Error Loading Model Information</h3>
+            <p>{{ error }}</p>
+        </div>
+        {% else %}
+        
+        <!-- Model Status -->
+        <div class="info-card">
+            <h3><i class="fas fa-info-circle"></i> Model Status</h3>
+            <div class="status-grid">
+                <div class="status-item">
+                    <span class="status-label">XGBoost Model:</span>
+                    <span class="status-value {{ 'loaded' if model_info.xgb_loaded else 'not-loaded' }}">
+                        {{ 'Loaded ✓' if model_info.xgb_loaded else 'Not Loaded ✗' }}
+                    </span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">CNN Model:</span>
+                    <span class="status-value {{ 'loaded' if model_info.cnn_loaded else 'not-loaded' }}">
+                        {{ 'Loaded ✓' if model_info.cnn_loaded else 'Not Loaded ✗' }}
+                    </span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Features:</span>
+                    <span class="status-value">{{ model_info.num_features }} health factors</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Classes:</span>
+                    <span class="status-value">{{ model_info.num_classes }} categories</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accuracy Information -->
+        {% if model_info.estimated_accuracy %}
+        <div class="info-card">
+            <h3><i class="fas fa-target"></i> Model Accuracy</h3>
+            <div class="accuracy-display">
+                <div class="accuracy-meter">
+                 
