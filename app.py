@@ -21,7 +21,7 @@ except ImportError as e:
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.secret_key = 'lungcare_ai_secret_key_2024'  # For session management
+app.secret_key = 'lungcare_ai_secret_key_2025'  # For session management
 
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
