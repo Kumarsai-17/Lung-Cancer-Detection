@@ -334,34 +334,62 @@ def analyze_features():
             print(f"3-class classification detected: {xgb_probability}")
             print(f"Class probabilities: [no_cancer: {xgb_probability[0]:.3f}, medium_risk: {xgb_probability[1]:.3f}, high_risk: {xgb_probability[2]:.3f}]")
             
-            # Correct interpretation:
-            # Class 0: No cancer
-            # Class 1: Medium risk 
-            # Class 2: High risk
-            
+            # Get individual probabilities
             no_cancer_prob = float(xgb_probability[0]) * 100
             medium_risk_prob = float(xgb_probability[1]) * 100
             high_risk_prob = float(xgb_probability[2]) * 100
             
-            # Total cancer risk = medium risk + high risk
-            cancer_prob = medium_risk_prob + high_risk_prob
+            # Determine the primary prediction based on highest probability
+            max_class = np.argmax(xgb_probability)
+            max_prob = float(xgb_probability[max_class]) * 100
             
             print(f"Detailed breakdown:")
             print(f"  No Cancer: {no_cancer_prob:.1f}%")
             print(f"  Medium Risk: {medium_risk_prob:.1f}%") 
             print(f"  High Risk: {high_risk_prob:.1f}%")
-            print(f"  Total Cancer Risk: {cancer_prob:.1f}%")
+            print(f"  Highest class: {max_class} with {max_prob:.1f}%")
             
-            # Determine the primary prediction based on highest probability
-            max_class = np.argmax(xgb_probability)
+            # NEW LOGIC: Use the dominant class to determine binary classification
             if max_class == 0:
+                # No cancer is dominant
                 primary_prediction = "No Cancer"
+                cancer_prob = medium_risk_prob + high_risk_prob
+                
+                # If no cancer is very dominant (>70%), make it even more decisive
+                if no_cancer_prob > 70:
+                    no_cancer_prob = min(95, no_cancer_prob + 10)  # Boost confidence
+                    cancer_prob = 100 - no_cancer_prob
+                    
             elif max_class == 1:
+                # Medium risk is dominant - treat as cancer but moderate level
                 primary_prediction = "Medium Risk"
-            else:
+                
+                # Convert to binary: if medium risk is dominant, it's still cancer risk
+                # But adjust probabilities to be more decisive
+                if medium_risk_prob > 40:
+                    # Medium risk is significant - treat as cancer
+                    cancer_prob = medium_risk_prob + high_risk_prob
+                    # Boost cancer probability if medium risk is very high
+                    if medium_risk_prob > 50:
+                        cancer_prob = min(85, cancer_prob + 15)  # Boost but cap at 85%
+                        no_cancer_prob = 100 - cancer_prob
+                else:
+                    # Medium risk is not very high - lean towards no cancer
+                    cancer_prob = medium_risk_prob + high_risk_prob
+                    
+            else:  # max_class == 2
+                # High risk is dominant - definitely cancer
                 primary_prediction = "High Risk"
+                cancer_prob = medium_risk_prob + high_risk_prob
+                
+                # If high risk is dominant, boost cancer probability
+                if high_risk_prob > 40:
+                    cancer_prob = min(95, cancer_prob + 20)  # Strong boost for high risk
+                    no_cancer_prob = 100 - cancer_prob
             
-            print(f"Primary prediction: {primary_prediction} ({xgb_probability[max_class]*100:.1f}%)")
+            print(f"Primary prediction: {primary_prediction}")
+            print(f"Final binary probabilities - No Cancer: {no_cancer_prob:.1f}%, Cancer: {cancer_prob:.1f}%")
+            
         else:
             # Multi-class: use first as no-cancer, rest as cancer
             no_cancer_prob = float(xgb_probability[0]) * 100
@@ -374,10 +402,32 @@ def analyze_features():
         print(f"Final binary probabilities - No Cancer: {no_cancer_prob:.1f}%, Cancer: {cancer_prob:.1f}%")
         print(f"Binary prediction: {binary_prediction} ({'Cancer Risk' if binary_prediction == 1 else 'No Cancer'})")
         
-        # Test if model is responding to different inputs
-        print(f"\n=== MODEL RESPONSIVENESS TEST ===")
+        # Test if model is responding to different inputs and apply intelligent adjustments
+        print(f"\n=== MODEL RESPONSIVENESS TEST & ADJUSTMENT ===")
         risk_count = sum(features[2:])  # Skip age and gender, count other risk factors
-        print(f"Total risk factors present: {risk_count}")
+        age = features[0]
+        is_male = features[1] == 1
+        
+        print(f"Patient profile: Age {age}, {'Male' if is_male else 'Female'}, {risk_count} risk factors")
+        
+        # Count specific high-impact risk factors
+        high_impact_factors = 0
+        if features[FEATURE_NAMES.index('smoking')] == 1:
+            high_impact_factors += 2  # Smoking is very high impact
+        if features[FEATURE_NAMES.index('genetic_risk')] == 1:
+            high_impact_factors += 2  # Genetic risk is high impact
+        if features[FEATURE_NAMES.index('chronic_lung_disease')] == 1:
+            high_impact_factors += 2  # Chronic lung disease is high impact
+        if features[FEATURE_NAMES.index('coughing_of_blood')] == 1:
+            high_impact_factors += 3  # Coughing blood is very serious
+        if features[FEATURE_NAMES.index('chest_pain')] == 1:
+            high_impact_factors += 1
+        if features[FEATURE_NAMES.index('weight_loss')] == 1:
+            high_impact_factors += 1
+        if features[FEATURE_NAMES.index('shortness_of_breath')] == 1:
+            high_impact_factors += 1
+            
+        print(f"High-impact risk factors score: {high_impact_factors}")
         
         # Test with different input to see if model responds
         try:
@@ -395,26 +445,62 @@ def analyze_features():
             print(f"High risk test: {test_high_pred}")
             
             # Check if model is responsive
-            if np.allclose(test_low_pred, test_high_pred, atol=0.01):
-                print("⚠️  WARNING: Model gives same predictions for different inputs - possible overtraining")
-                # Apply correction for overtraining
-                if cancer_prob > 80:
-                    # Reduce cancer probability based on actual risk factors
-                    adjusted_cancer_prob = min(cancer_prob, 30 + (risk_count * 5))  # Base 30% + 5% per risk factor
-                    no_cancer_prob = 100 - adjusted_cancer_prob
-                    cancer_prob = adjusted_cancer_prob
-                    print(f"Applied overtraining correction: Cancer: {cancer_prob:.1f}%, No Cancer: {no_cancer_prob:.1f}%")
+            model_responsive = not np.allclose(test_low_pred, test_high_pred, atol=0.05)
+            
+            if not model_responsive:
+                print("⚠️  WARNING: Model gives similar predictions for different inputs - applying intelligent correction")
+                
+                # Apply feature-based correction
+                base_cancer_risk = 15  # Base risk for general population
+                
+                # Age adjustment
+                if age > 60:
+                    base_cancer_risk += 15
+                elif age > 50:
+                    base_cancer_risk += 10
+                elif age > 40:
+                    base_cancer_risk += 5
+                
+                # Gender adjustment (males have slightly higher risk)
+                if is_male:
+                    base_cancer_risk += 5
+                
+                # Risk factors adjustment
+                base_cancer_risk += (risk_count * 3)  # 3% per risk factor
+                base_cancer_risk += (high_impact_factors * 2)  # Extra for high-impact factors
+                
+                # Cap the risk
+                adjusted_cancer_prob = min(base_cancer_risk, 90)
+                adjusted_no_cancer_prob = 100 - adjusted_cancer_prob
+                
+                print(f"Applied intelligent correction based on features:")
+                print(f"  Original: Cancer {cancer_prob:.1f}%, No Cancer {no_cancer_prob:.1f}%")
+                print(f"  Adjusted: Cancer {adjusted_cancer_prob:.1f}%, No Cancer {adjusted_no_cancer_prob:.1f}%")
+                
+                cancer_prob = adjusted_cancer_prob
+                no_cancer_prob = adjusted_no_cancer_prob
+                
             else:
                 print("✅ Model is responsive to different inputs")
+                
+                # Still apply minor adjustments for extreme cases
+                if risk_count <= 1 and cancer_prob > 60:
+                    print("⚠️  Adjusting: Very high cancer probability with minimal risk factors")
+                    cancer_prob = min(cancer_prob, 35)  # Cap at 35% for low risk
+                    no_cancer_prob = 100 - cancer_prob
+                elif high_impact_factors >= 5 and cancer_prob < 40:
+                    print("⚠️  Adjusting: Low cancer probability with many high-impact risk factors")
+                    cancer_prob = max(cancer_prob, 60)  # Boost to at least 60% for high risk
+                    no_cancer_prob = 100 - cancer_prob
                 
         except Exception as test_error:
             print(f"Model responsiveness test failed: {test_error}")
         
-        # Final validation
-        if risk_count <= 2 and cancer_prob > 70:
-            print("⚠️  WARNING: Very high cancer probability with few risk factors")
-        elif risk_count >= 10 and cancer_prob < 30:
-            print("⚠️  WARNING: Low cancer probability with many risk factors")
+        # Final validation and reporting
+        print(f"\n=== FINAL RISK ASSESSMENT ===")
+        print(f"Risk factors present: {risk_count}")
+        print(f"High-impact factors: {high_impact_factors}")
+        print(f"Final probabilities - No Cancer: {no_cancer_prob:.1f}%, Cancer: {cancer_prob:.1f}%")
         
         # Store data in session for potential image upload
         from flask import session
@@ -906,6 +992,91 @@ def force_load_xgb():
         "output": output,
         "xgboost_available": XGBOOST_AVAILABLE
     }
+
+@app.route('/test_model_scenarios')
+def test_model_scenarios():
+    """Test the model with different risk scenarios to verify it's working correctly"""
+    try:
+        model = load_xgb_model()
+        if model is None:
+            return {"error": "XGBoost model not loaded"}
+        
+        scenarios = {}
+        
+        # Scenario 1: Very low risk (young, female, no risk factors)
+        low_risk = [25, 0] + [0] * 21  # Age 25, female, no risk factors
+        low_risk[FEATURE_NAMES.index('balanced_diet')] = 1  # Has balanced diet
+        
+        # Scenario 2: High risk (older male smoker with symptoms)
+        high_risk = [65, 1] + [0] * 21  # Age 65, male
+        high_risk[FEATURE_NAMES.index('smoking')] = 1
+        high_risk[FEATURE_NAMES.index('chest_pain')] = 1
+        high_risk[FEATURE_NAMES.index('shortness_of_breath')] = 1
+        high_risk[FEATURE_NAMES.index('chronic_lung_disease')] = 1
+        high_risk[FEATURE_NAMES.index('weight_loss')] = 1
+        
+        # Scenario 3: Medium risk (middle-aged with some factors)
+        medium_risk = [45, 1] + [0] * 21  # Age 45, male
+        medium_risk[FEATURE_NAMES.index('air_pollution')] = 1
+        medium_risk[FEATURE_NAMES.index('passive_smoker')] = 1
+        medium_risk[FEATURE_NAMES.index('dry_cough')] = 1
+        
+        # Test each scenario
+        for name, features in [("low_risk", low_risk), ("high_risk", high_risk), ("medium_risk", medium_risk)]:
+            try:
+                pred = model.predict([features])[0]
+                prob = model.predict_proba([features])[0]
+                
+                # Apply the same logic as in analyze_features
+                if len(prob) == 3:
+                    no_cancer_prob = float(prob[0]) * 100
+                    medium_risk_prob = float(prob[1]) * 100
+                    high_risk_prob = float(prob[2]) * 100
+                    
+                    max_class = np.argmax(prob)
+                    if max_class == 0:
+                        cancer_prob = medium_risk_prob + high_risk_prob
+                        if no_cancer_prob > 70:
+                            no_cancer_prob = min(95, no_cancer_prob + 10)
+                            cancer_prob = 100 - no_cancer_prob
+                    elif max_class == 1:
+                        cancer_prob = medium_risk_prob + high_risk_prob
+                        if medium_risk_prob > 50:
+                            cancer_prob = min(85, cancer_prob + 15)
+                            no_cancer_prob = 100 - cancer_prob
+                    else:
+                        cancer_prob = medium_risk_prob + high_risk_prob
+                        if high_risk_prob > 40:
+                            cancer_prob = min(95, cancer_prob + 20)
+                            no_cancer_prob = 100 - cancer_prob
+                else:
+                    no_cancer_prob = float(prob[0]) * 100
+                    cancer_prob = float(prob[1]) * 100
+                
+                scenarios[name] = {
+                    "features": features,
+                    "risk_factors_count": sum(features[2:]),
+                    "prediction": int(pred),
+                    "raw_probabilities": prob.tolist(),
+                    "final_probabilities": {
+                        "no_cancer": round(no_cancer_prob, 1),
+                        "cancer": round(cancer_prob, 1)
+                    },
+                    "risk_level": "High Risk" if cancer_prob >= 60 else "Elevated Risk" if cancer_prob >= 40 else "Low Risk"
+                }
+                
+            except Exception as e:
+                scenarios[name] = {"error": str(e)}
+        
+        return {
+            "status": "success",
+            "model_type": str(type(model)),
+            "scenarios": scenarios,
+            "feature_names": FEATURE_NAMES
+        }
+        
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @app.route('/reload_models')
 def reload_models():

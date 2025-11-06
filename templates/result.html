@@ -3,158 +3,131 @@
 {% block title %}Analysis Results - Lung Cancer Detection{% endblock %}
 
 {% block content %}
-<div class="result-header">
+<!-- Modern Result Header -->
+<div class="modern-result-header">
     <div class="container">
-        <h1 class="page-title">
-            <i class="fas fa-chart-pie"></i>
-            Analysis Results
-        </h1>
-        <p class="page-description">Your lung cancer risk assessment results</p>
+        <div class="header-content">
+            <div class="header-icon">
+                <i class="fas fa-microscope"></i>
+            </div>
+            <div class="header-text">
+                <h1>Medical Analysis Results</h1>
+                <p>AI-Powered Lung Cancer Risk Assessment</p>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="result-section">
+<div class="modern-result-container">
     <div class="container">
         {% if error %}
-        <div class="error-card">
+        <!-- Error State -->
+        <div class="error-state">
             <div class="error-icon">
                 <i class="fas fa-exclamation-triangle"></i>
             </div>
             <h3>Analysis Error</h3>
             <p>{{ error }}</p>
-            <div class="error-actions">
-                <a href="{{ url_for('features') }}" class="btn-primary">
-                    <i class="fas fa-redo"></i>
-                    Try Again
-                </a>
-            </div>
+            <a href="{{ url_for('features') }}" class="retry-btn">
+                <i class="fas fa-redo"></i>
+                Try Again
+            </a>
         </div>
         {% else %}
 
         {% if result.analysis_type == 'complete' %}
-        <!-- Patient Information Card -->
-        <div class="patient-info-card">
+        <!-- Patient Information -->
+        <div class="patient-card">
             <div class="patient-header">
-                <div class="patient-icon">
+                <div class="patient-avatar">
                     <i class="fas fa-user-circle"></i>
                 </div>
-                <div class="patient-details">
+                <div class="patient-info">
                     <h2>{{ result.patient_info.name }}</h2>
-                    <div class="patient-meta">
-                        <span><i class="fas fa-calendar"></i> Age: {{ result.patient_info.age }}</span>
-                        <span><i class="fas fa-venus-mars"></i> Gender: {{ result.patient_info.gender }}</span>
-                        <span><i class="fas fa-clock"></i> Analysis Date: {{ result.patient_info.date }}</span>
+                    <div class="patient-details">
+                        <span><i class="fas fa-calendar"></i> {{ result.patient_info.age }} years old</span>
+                        <span><i class="fas fa-venus-mars"></i> {{ result.patient_info.gender }}</span>
+                        <span><i class="fas fa-clock"></i> {{ result.patient_info.date }}</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Hybrid Result - Main Result -->
-        <div class="result-card hybrid-result">
-            <div class="result-header-content">
-                <div class="result-icon hybrid-icon">
+        <!-- Main Risk Assessment -->
+        <div class="risk-assessment-card">
+            <div class="assessment-header">
+                <h2>
                     <i class="fas fa-brain"></i>
-                </div>
-                <div class="result-title">
                     {% if result.cnn_result %}
-                    <h2>Hybrid AI Analysis Result</h2>
-                    <p>Combined CNN (70%) + XGBoost (30%) Model</p>
+                    Hybrid AI Analysis
                     {% else %}
-                    <h2>XGBoost Analysis Result</h2>
-                    <p>Feature-based Risk Assessment</p>
+                    XGBoost Analysis
                     {% endif %}
-                </div>
+                </h2>
+                <p class="assessment-subtitle">
+                    {% if result.cnn_result %}
+                    Combined CNN (70%) + XGBoost (30%) Model
+                    {% else %}
+                    Feature-based Risk Assessment
+                    {% endif %}
+                </p>
             </div>
 
-            <div class="result-content">
-                <div class="prediction-result">
-                    {% set hybrid_cancer_prob = result.hybrid_result.probability.cancer %}
-                    {% if hybrid_cancer_prob >= 70 %}
-                    <div class="prediction-badge high-risk">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        High Cancer Risk Detected
-                    </div>
-                    {% elif hybrid_cancer_prob >= 30 %}
-                    <div class="prediction-badge medium-risk">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Medium Cancer Risk Detected
-                    </div>
-                    {% else %}
-                    <div class="prediction-badge low-risk">
-                        <i class="fas fa-check-circle"></i>
-                        Low Cancer Risk
-                    </div>
-                    {% endif %}
+            <!-- Risk Level Badge -->
+            <div class="risk-level-section">
+                {% set cancer_prob = result.hybrid_result.probability.cancer %}
+                {% if cancer_prob >= 60 %}
+                <div class="risk-badge high-risk">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>HIGH RISK</span>
                 </div>
-
-                {% if result.cnn_result %}
-                <div class="hybrid-weights">
-                    <h4><i class="fas fa-balance-scale"></i> Model Weights</h4>
-                    <div class="weight-bars">
-                        <div class="weight-item">
-                            <span class="weight-label">CNN Model</span>
-                            <div class="weight-bar">
-                                <div class="weight-fill cnn-weight" style="width: 70%"></div>
-                            </div>
-                            <span class="weight-value">70%</span>
-                        </div>
-                        <div class="weight-item">
-                            <span class="weight-label">XGBoost Model</span>
-                            <div class="weight-bar">
-                                <div class="weight-fill xgb-weight" style="width: 30%"></div>
-                            </div>
-                            <span class="weight-value">30%</span>
-                        </div>
-                    </div>
+                {% elif cancer_prob >= 40 %}
+                <div class="risk-badge medium-risk">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span>ELEVATED RISK</span>
+                </div>
+                {% else %}
+                <div class="risk-badge low-risk">
+                    <i class="fas fa-shield-check"></i>
+                    <span>LOW RISK</span>
                 </div>
                 {% endif %}
+            </div>
 
-                <div class="probability-section">
-                    <h3><i class="fas fa-percentage"></i> {% if result.cnn_result %}Final Risk Assessment{% else %}Risk
-                        Assessment{% endif %}</h3>
-                    <div class="probability-bars">
-                        <div class="probability-item">
-                            <div class="prob-label">
-                                <span>No Cancer Risk</span>
-                                <span class="prob-value">{{ "%.1f"|format(result.hybrid_result.probability.no_cancer)
-                                    }}%</span>
-                            </div>
-                            <div class="prob-bar">
-                                <div class="prob-fill safe"
-                                    style="width: {{ result.hybrid_result.probability.no_cancer }}%"></div>
-                            </div>
-                        </div>
-                        <div class="probability-item">
-                            <div class="prob-label">
-                                <span>Cancer Risk</span>
-                                <span class="prob-value">{{ "%.1f"|format(result.hybrid_result.probability.cancer)
-                                    }}%</span>
-                            </div>
-                            <div class="prob-bar">
-                                {% set cancer_prob = result.hybrid_result.probability.cancer %}
-                                {% if cancer_prob >= 70 %}
-                                <div class="prob-fill danger" style="width: {{ cancer_prob }}%"></div>
-                                {% elif cancer_prob >= 30 %}
-                                <div class="prob-fill medium" style="width: {{ cancer_prob }}%"></div>
-                                {% else %}
-                                <div class="prob-fill safe" style="width: {{ cancer_prob }}%"></div>
-                                {% endif %}
-                            </div>
-                        </div>
+            <!-- Risk Probabilities -->
+            <div class="probability-display">
+                <div class="prob-item safe-item">
+                    <div class="prob-header">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>No Cancer Risk</span>
+                    </div>
+                    <div class="prob-percentage">{{ "%.1f"|format(result.hybrid_result.probability.no_cancer) }}%</div>
+                    <div class="prob-bar">
+                        <div class="prob-fill safe-fill" style="width: {{ result.hybrid_result.probability.no_cancer }}%"></div>
+                    </div>
+                </div>
+
+                <div class="prob-item danger-item">
+                    <div class="prob-header">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Cancer Risk</span>
+                    </div>
+                    <div class="prob-percentage">{{ "%.1f"|format(result.hybrid_result.probability.cancer) }}%</div>
+                    <div class="prob-bar">
+                        <div class="prob-fill danger-fill" style="width: {{ result.hybrid_result.probability.cancer }}%"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Individual Model Results -->
-        <div class="individual-results">
-            <h3><i class="fas fa-chart-bar"></i> Individual Model Results</h3>
-
+        <!-- Model Details -->
+        <div class="models-section">
+            <h3><i class="fas fa-cogs"></i> Model Analysis Details</h3>
             <div class="models-grid">
-                <!-- XGBoost Result -->
-                <div class="model-result-card">
+                <!-- XGBoost Model -->
+                <div class="model-card">
                     <div class="model-header">
-                        <div class="model-icon xgb-icon">
+                        <div class="model-icon xgb">
                             <i class="fas fa-tree"></i>
                         </div>
                         <div class="model-info">
@@ -162,31 +135,33 @@
                             <p>Feature-based Analysis</p>
                         </div>
                     </div>
-                    <div class="model-prediction">
-                        {% set cancer_prob = result.xgb_result.probability.cancer %}
-                        {% if cancer_prob >= 70 %}
-                        <span class="model-badge high-risk">High Risk</span>
-                        {% elif cancer_prob >= 30 %}
-                        <span class="model-badge medium-risk">Medium Risk</span>
+                    <div class="model-result">
+                        {% set xgb_cancer_prob = result.xgb_result.probability.cancer %}
+                        {% if xgb_cancer_prob >= 60 %}
+                        <span class="model-status high">High Risk</span>
+                        {% elif xgb_cancer_prob >= 40 %}
+                        <span class="model-status medium">Elevated Risk</span>
                         {% else %}
-                        <span class="model-badge low-risk">Low Risk</span>
+                        <span class="model-status low">Low Risk</span>
                         {% endif %}
                     </div>
                     <div class="model-probabilities">
-                        <div class="prob-item">
-                            <span>No Cancer: {{ "%.1f"|format(result.xgb_result.probability.no_cancer) }}%</span>
+                        <div class="prob-row">
+                            <span>No Cancer:</span>
+                            <span class="safe-text">{{ "%.1f"|format(result.xgb_result.probability.no_cancer) }}%</span>
                         </div>
-                        <div class="prob-item">
-                            <span>Cancer: {{ "%.1f"|format(result.xgb_result.probability.cancer) }}%</span>
+                        <div class="prob-row">
+                            <span>Cancer:</span>
+                            <span class="danger-text">{{ "%.1f"|format(result.xgb_result.probability.cancer) }}%</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- CNN Result -->
+                <!-- CNN Model -->
                 {% if result.cnn_result %}
-                <div class="model-result-card">
+                <div class="model-card">
                     <div class="model-header">
-                        <div class="model-icon cnn-icon">
+                        <div class="model-icon cnn">
                             <i class="fas fa-network-wired"></i>
                         </div>
                         <div class="model-info">
@@ -194,29 +169,31 @@
                             <p>Image-based Analysis</p>
                         </div>
                     </div>
-                    <div class="model-prediction">
+                    <div class="model-result">
                         {% if result.cnn_result.prediction == 1 %}
-                        <span class="model-badge high-risk">{{ result.cnn_result.predicted_label }}</span>
+                        <span class="model-status high">{{ result.cnn_result.predicted_label }}</span>
                         {% else %}
-                        <span class="model-badge low-risk">{{ result.cnn_result.predicted_label }}</span>
+                        <span class="model-status low">{{ result.cnn_result.predicted_label }}</span>
                         {% endif %}
                     </div>
                     <div class="model-confidence">
                         <span>Confidence: {{ "%.1f"|format(result.cnn_result.confidence) }}%</span>
                     </div>
                     <div class="model-probabilities">
-                        <div class="prob-item">
-                            <span>No Cancer: {{ "%.1f"|format(result.cnn_result.no_cancer_probability) }}%</span>
+                        <div class="prob-row">
+                            <span>No Cancer:</span>
+                            <span class="safe-text">{{ "%.1f"|format(result.cnn_result.no_cancer_probability) }}%</span>
                         </div>
-                        <div class="prob-item">
-                            <span>Cancer: {{ "%.1f"|format(result.cnn_result.cancer_probability) }}%</span>
+                        <div class="prob-row">
+                            <span>Cancer:</span>
+                            <span class="danger-text">{{ "%.1f"|format(result.cnn_result.cancer_probability) }}%</span>
                         </div>
                     </div>
                 </div>
                 {% else %}
-                <div class="model-result-card disabled">
+                <div class="model-card disabled">
                     <div class="model-header">
-                        <div class="model-icon cnn-icon">
+                        <div class="model-icon cnn">
                             <i class="fas fa-network-wired"></i>
                         </div>
                         <div class="model-info">
@@ -224,156 +201,87 @@
                             <p>No image provided</p>
                         </div>
                     </div>
-                    <div class="model-prediction">
-                        <span class="model-badge disabled">Not Available</span>
+                    <div class="model-result">
+                        <span class="model-status disabled">Not Available</span>
                     </div>
                 </div>
                 {% endif %}
             </div>
         </div>
 
-        <!-- Medical Image Display -->
+        <!-- Medical Image -->
         {% if result.image_path %}
-        <div class="image-analysis-section">
+        <div class="image-section">
             <h3><i class="fas fa-image"></i> Medical Image Analysis</h3>
-            <div class="analyzed-image-container">
-                <img src="{{ url_for('static', filename=result.image_path) }}" alt="Medical Image"
-                    class="analyzed-image">
+            <div class="image-container">
+                <img src="{{ url_for('static', filename=result.image_path) }}" alt="Medical Image" class="medical-image">
             </div>
         </div>
         {% endif %}
 
-        <!-- Patient Summary -->
-        <div class="patient-summary-section">
-            <h3><i class="fas fa-clipboard-list"></i> Patient Summary</h3>
-            <div class="summary-grid">
-                <div class="summary-card">
+        <!-- Risk Factors Summary -->
+        <div class="factors-section">
+            <h3><i class="fas fa-clipboard-list"></i> Risk Assessment Summary</h3>
+            <div class="factors-grid">
+                <div class="factors-card risk-factors-card">
                     <h4><i class="fas fa-exclamation-circle"></i> Risk Factors Present</h4>
-                    <div class="risk-factors">
+                    <div class="factors-list">
                         {% set risk_factors = [] %}
+                        
+                        {# Collect all risk factors #}
+                        {% if result.feature_summary.air_pollution %}{% set _ = risk_factors.append('Air Pollution Exposure') %}{% endif %}
+                        {% if result.feature_summary.dust_allergy %}{% set _ = risk_factors.append('Dust Allergy') %}{% endif %}
+                        {% if result.feature_summary.occupational_hazards %}{% set _ = risk_factors.append('Occupational Hazards') %}{% endif %}
+                        {% if result.feature_summary.smoking %}{% set _ = risk_factors.append('Smoking') %}{% endif %}
+                        {% if result.feature_summary.passive_smoker %}{% set _ = risk_factors.append('Passive Smoking') %}{% endif %}
+                        {% if result.feature_summary.alcohol_use %}{% set _ = risk_factors.append('Alcohol Use') %}{% endif %}
+                        {% if result.feature_summary.obesity %}{% set _ = risk_factors.append('Obesity') %}{% endif %}
+                        {% if result.feature_summary.genetic_risk %}{% set _ = risk_factors.append('Genetic Risk') %}{% endif %}
+                        {% if result.feature_summary.chronic_lung_disease %}{% set _ = risk_factors.append('Chronic Lung Disease') %}{% endif %}
+                        {% if result.feature_summary.chest_pain %}{% set _ = risk_factors.append('Chest Pain') %}{% endif %}
+                        {% if result.feature_summary.coughing_of_blood %}{% set _ = risk_factors.append('Coughing Blood') %}{% endif %}
+                        {% if result.feature_summary.fatigue %}{% set _ = risk_factors.append('Fatigue') %}{% endif %}
+                        {% if result.feature_summary.weight_loss %}{% set _ = risk_factors.append('Weight Loss') %}{% endif %}
+                        {% if result.feature_summary.shortness_of_breath %}{% set _ = risk_factors.append('Shortness of Breath') %}{% endif %}
+                        {% if result.feature_summary.wheezing %}{% set _ = risk_factors.append('Wheezing') %}{% endif %}
+                        {% if result.feature_summary.swallowing_difficulty %}{% set _ = risk_factors.append('Swallowing Difficulty') %}{% endif %}
+                        {% if result.feature_summary.clubbing_of_finger_nails %}{% set _ = risk_factors.append('Clubbing of Finger Nails') %}{% endif %}
+                        {% if result.feature_summary.frequent_cold %}{% set _ = risk_factors.append('Frequent Cold') %}{% endif %}
+                        {% if result.feature_summary.dry_cough %}{% set _ = risk_factors.append('Dry Cough') %}{% endif %}
+                        {% if result.feature_summary.snoring %}{% set _ = risk_factors.append('Snoring') %}{% endif %}
 
-                        {# Environmental Risk Factors #}
-                        {% if result.feature_summary.air_pollution %}
-                        {% set _ = risk_factors.append('Air Pollution Exposure') %}
-                        {% endif %}
-                        {% if result.feature_summary.dust_allergy %}
-                        {% set _ = risk_factors.append('Dust Allergy') %}
-                        {% endif %}
-                        {% if result.feature_summary.occupational_hazards %}
-                        {% set _ = risk_factors.append('Occupational Hazards') %}
-                        {% endif %}
-
-                        {# Lifestyle Risk Factors #}
-                        {% if result.feature_summary.smoking %}
-                        {% set _ = risk_factors.append('Smoking') %}
-                        {% endif %}
-                        {% if result.feature_summary.passive_smoker %}
-                        {% set _ = risk_factors.append('Passive Smoking') %}
-                        {% endif %}
-                        {% if result.feature_summary.alcohol_use %}
-                        {% set _ = risk_factors.append('Alcohol Use') %}
-                        {% endif %}
-                        {% if result.feature_summary.obesity %}
-                        {% set _ = risk_factors.append('Obesity') %}
-                        {% endif %}
-
-                        {# Medical Risk Factors #}
-                        {% if result.feature_summary.genetic_risk %}
-                        {% set _ = risk_factors.append('Genetic Risk') %}
-                        {% endif %}
-                        {% if result.feature_summary.chronic_lung_disease %}
-                        {% set _ = risk_factors.append('Chronic Lung Disease') %}
-                        {% endif %}
-
-                        {# Symptom Risk Factors #}
-                        {% if result.feature_summary.chest_pain %}
-                        {% set _ = risk_factors.append('Chest Pain') %}
-                        {% endif %}
-                        {% if result.feature_summary.coughing_of_blood %}
-                        {% set _ = risk_factors.append('Coughing Blood') %}
-                        {% endif %}
-                        {% if result.feature_summary.fatigue %}
-                        {% set _ = risk_factors.append('Fatigue') %}
-                        {% endif %}
-                        {% if result.feature_summary.weight_loss %}
-                        {% set _ = risk_factors.append('Weight Loss') %}
-                        {% endif %}
-                        {% if result.feature_summary.shortness_of_breath %}
-                        {% set _ = risk_factors.append('Shortness of Breath') %}
-                        {% endif %}
-                        {% if result.feature_summary.wheezing %}
-                        {% set _ = risk_factors.append('Wheezing') %}
-                        {% endif %}
-                        {% if result.feature_summary.swallowing_difficulty %}
-                        {% set _ = risk_factors.append('Swallowing Difficulty') %}
-                        {% endif %}
-                        {% if result.feature_summary.clubbing_of_finger_nails %}
-                        {% set _ = risk_factors.append('Clubbing of Finger Nails') %}
-                        {% endif %}
-                        {% if result.feature_summary.frequent_cold %}
-                        {% set _ = risk_factors.append('Frequent Cold') %}
-                        {% endif %}
-                        {% if result.feature_summary.dry_cough %}
-                        {% set _ = risk_factors.append('Dry Cough') %}
-                        {% endif %}
-                        {% if result.feature_summary.snoring %}
-                        {% set _ = risk_factors.append('Snoring') %}
-                        {% endif %}
-
-                        {# Display risk factors #}
                         {% if risk_factors %}
-                        {% for factor in risk_factors %}
-                        <span class="risk-factor-tag">{{ factor }}</span>
-                        {% endfor %}
+                            {% for factor in risk_factors %}
+                            <span class="factor-tag risk-tag">{{ factor }}</span>
+                            {% endfor %}
                         {% else %}
-                        <span class="no-factors">No significant risk factors identified</span>
+                            <span class="no-factors">No significant risk factors identified</span>
                         {% endif %}
                     </div>
                 </div>
 
-                <div class="summary-card">
+                <div class="factors-card protective-factors-card">
                     <h4><i class="fas fa-shield-alt"></i> Protective Factors</h4>
-                    <div class="protective-factors">
+                    <div class="factors-list">
                         {% set protective_factors = [] %}
+                        
+                        {# Collect protective factors #}
+                        {% if result.feature_summary.balanced_diet %}{% set _ = protective_factors.append('Balanced Diet') %}{% endif %}
+                        {% if not result.feature_summary.smoking %}{% set _ = protective_factors.append('Non-Smoker') %}{% endif %}
+                        {% if not result.feature_summary.passive_smoker %}{% set _ = protective_factors.append('No Passive Smoking') %}{% endif %}
+                        {% if not result.feature_summary.alcohol_use %}{% set _ = protective_factors.append('No Alcohol Use') %}{% endif %}
+                        {% if not result.feature_summary.obesity %}{% set _ = protective_factors.append('Healthy Weight') %}{% endif %}
+                        {% if not result.feature_summary.air_pollution %}{% set _ = protective_factors.append('Clean Air Environment') %}{% endif %}
+                        {% if not result.feature_summary.occupational_hazards %}{% set _ = protective_factors.append('Safe Work Environment') %}{% endif %}
+                        {% if not result.feature_summary.genetic_risk %}{% set _ = protective_factors.append('No Genetic Risk') %}{% endif %}
+                        {% if not result.feature_summary.chronic_lung_disease %}{% set _ = protective_factors.append('No Chronic Lung Disease') %}{% endif %}
 
-                        {# Positive protective factors (when checked) #}
-                        {% if result.feature_summary.balanced_diet %}
-                        {% set _ = protective_factors.append('Balanced Diet') %}
-                        {% endif %}
-
-                        {# Negative protective factors (when NOT checked) #}
-                        {% if not result.feature_summary.smoking %}
-                        {% set _ = protective_factors.append('Non-Smoker') %}
-                        {% endif %}
-                        {% if not result.feature_summary.passive_smoker %}
-                        {% set _ = protective_factors.append('No Passive Smoking') %}
-                        {% endif %}
-                        {% if not result.feature_summary.alcohol_use %}
-                        {% set _ = protective_factors.append('No Alcohol Use') %}
-                        {% endif %}
-                        {% if not result.feature_summary.obesity %}
-                        {% set _ = protective_factors.append('Healthy Weight') %}
-                        {% endif %}
-                        {% if not result.feature_summary.air_pollution %}
-                        {% set _ = protective_factors.append('Clean Air Environment') %}
-                        {% endif %}
-                        {% if not result.feature_summary.occupational_hazards %}
-                        {% set _ = protective_factors.append('Safe Work Environment') %}
-                        {% endif %}
-                        {% if not result.feature_summary.genetic_risk %}
-                        {% set _ = protective_factors.append('No Genetic Risk') %}
-                        {% endif %}
-                        {% if not result.feature_summary.chronic_lung_disease %}
-                        {% set _ = protective_factors.append('No Chronic Lung Disease') %}
-                        {% endif %}
-
-                        {# Display protective factors #}
                         {% if protective_factors %}
-                        {% for factor in protective_factors %}
-                        <span class="protective-factor-tag">{{ factor }}</span>
-                        {% endfor %}
+                            {% for factor in protective_factors %}
+                            <span class="factor-tag protective-tag">{{ factor }}</span>
+                            {% endfor %}
                         {% else %}
-                        <span class="no-factors">No significant protective factors identified</span>
+                            <span class="no-factors">No significant protective factors identified</span>
                         {% endif %}
                     </div>
                 </div>
@@ -381,175 +289,993 @@
         </div>
 
         {% else %}
-        <div class="result-card">
+        <!-- Single Analysis Results -->
+        <div class="single-analysis-card">
             {% if result.analysis_type == 'features' %}
-            <div class="result-header-content">
-                <div class="result-icon">
+            <div class="analysis-header">
+                <div class="analysis-icon">
                     <i class="fas fa-list-check"></i>
                 </div>
-                <div class="result-title">
+                <div class="analysis-title">
                     <h2>Feature-Based Analysis</h2>
                     <p>XGBoost Model Results</p>
                 </div>
             </div>
 
-            <div class="result-content">
-                <div class="prediction-result">
-                    {% if result.prediction == 1 %}
-                    <div class="prediction-badge high-risk">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        High Risk Detected
-                    </div>
-                    {% else %}
-                    <div class="prediction-badge low-risk">
-                        <i class="fas fa-check-circle"></i>
-                        Low Risk Detected
-                    </div>
-                    {% endif %}
+            <div class="single-result">
+                {% if result.prediction == 1 %}
+                <div class="risk-badge high-risk">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>HIGH RISK DETECTED</span>
                 </div>
+                {% else %}
+                <div class="risk-badge low-risk">
+                    <i class="fas fa-shield-check"></i>
+                    <span>LOW RISK DETECTED</span>
+                </div>
+                {% endif %}
 
-                <div class="probability-section">
-                    <h3><i class="fas fa-percentage"></i> Risk Probability</h3>
-                    <div class="probability-bars">
-                        <div class="probability-item">
-                            <div class="prob-label">
-                                <span>No Cancer Risk</span>
-                                <span class="prob-value">{{ "%.1f"|format(result.probability.no_cancer) }}%</span>
-                            </div>
-                            <div class="prob-bar">
-                                <div class="prob-fill safe" style="width: {{ result.probability.no_cancer }}%"></div>
-                            </div>
+                <div class="probability-display">
+                    <div class="prob-item safe-item">
+                        <div class="prob-header">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>No Cancer Risk</span>
                         </div>
-                        <div class="probability-item">
-                            <div class="prob-label">
-                                <span>Cancer Risk</span>
-                                <span class="prob-value">{{ "%.1f"|format(result.probability.cancer) }}%</span>
-                            </div>
-                            <div class="prob-bar">
-                                <div class="prob-fill danger" style="width: {{ result.probability.cancer }}%"></div>
-                            </div>
+                        <div class="prob-percentage">{{ "%.1f"|format(result.probability.no_cancer) }}%</div>
+                        <div class="prob-bar">
+                            <div class="prob-fill safe-fill" style="width: {{ result.probability.no_cancer }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="prob-item danger-item">
+                        <div class="prob-header">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Cancer Risk</span>
+                        </div>
+                        <div class="prob-percentage">{{ "%.1f"|format(result.probability.cancer) }}%</div>
+                        <div class="prob-bar">
+                            <div class="prob-fill danger-fill" style="width: {{ result.probability.cancer }}%"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
             {% elif result.analysis_type == 'image' %}
-            <div class="result-header-content">
-                <div class="result-icon">
+            <div class="analysis-header">
+                <div class="analysis-icon">
                     <i class="fas fa-image"></i>
                 </div>
-                <div class="result-title">
+                <div class="analysis-title">
                     <h2>Image-Based Analysis</h2>
                     <p>CNN Model Results</p>
                 </div>
             </div>
 
-            <div class="result-content">
-                <div class="image-result-section">
-                    <div class="analyzed-image">
-                        <img src="{{ url_for('static', filename=result.image_path) }}" alt="Analyzed Image">
-                    </div>
-                    <div class="image-analysis">
-                        <div class="prediction-result">
-                            {% set cancer_terms = ['cancer', 'carcinoma', 'malignant', 'tumor', 'tumour',
-                            'adenocarcinoma', 'squamous', 'large_cell'] %}
-                            {% set is_cancer = false %}
-                            {% for term in cancer_terms %}
-                            {% if term in result.predicted_label.lower() %}
+            <div class="image-analysis-result">
+                <div class="analyzed-image-container">
+                    <img src="{{ url_for('static', filename=result.image_path) }}" alt="Analyzed Image" class="analyzed-image">
+                </div>
+                <div class="image-result-details">
+                    {% set cancer_terms = ['cancer', 'carcinoma', 'malignant', 'tumor', 'tumour', 'adenocarcinoma', 'squamous', 'large_cell'] %}
+                    {% set is_cancer = false %}
+                    {% for term in cancer_terms %}
+                        {% if term in result.predicted_label.lower() %}
                             {% set is_cancer = true %}
-                            {% endif %}
-                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
 
-                            <div class="prediction-badge {{ 'high-risk' if is_cancer else 'low-risk' }}">
-                                <i class="fas fa-{{ 'exclamation-triangle' if is_cancer else 'check-circle' }}"></i>
-                                {{ result.predicted_label }}
-                            </div>
-                        </div>
-                        <div class="confidence-section">
-                            <h4><i class="fas fa-brain"></i> AI Confidence</h4>
-                            <div class="confidence-meter">
-                                <div class="confidence-fill" style="width: {{ result.confidence }}%"></div>
-                                <span class="confidence-text">{{ "%.1f"|format(result.confidence) }}%</span>
-                            </div>
+                    <div class="risk-badge {{ 'high-risk' if is_cancer else 'low-risk' }}">
+                        <i class="fas fa-{{ 'exclamation-triangle' if is_cancer else 'shield-check' }}"></i>
+                        <span>{{ result.predicted_label }}</span>
+                    </div>
+
+                    <div class="confidence-display">
+                        <h4><i class="fas fa-brain"></i> AI Confidence</h4>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: {{ result.confidence }}%"></div>
+                            <span class="confidence-text">{{ "%.1f"|format(result.confidence) }}%</span>
                         </div>
                     </div>
                 </div>
             </div>
             {% endif %}
-
-            <div class="result-disclaimer">
-                <div class="disclaimer-icon">
-                    <i class="fas fa-info-circle"></i>
-                </div>
-                <div class="disclaimer-content">
-                    <h4>Important Disclaimer</h4>
-                    <p>This analysis is for informational purposes only and should not replace professional medical
-                        advice.
-                        Please consult with a qualified healthcare provider for proper diagnosis and treatment.</p>
-                </div>
-            </div>
-
-            <div class="result-actions">
-                <a href="{{ url_for('features') }}" class="btn-secondary">
-                    <i class="fas fa-redo"></i>
-                    New Analysis
-                </a>
-                <button onclick="window.print()" class="btn-outline">
-                    <i class="fas fa-print"></i>
-                    Print Results
-                </button>
-                <button onclick="shareResults()" class="btn-outline">
-                    <i class="fas fa-share"></i>
-                    Share Results
-                </button>
-            </div>
         </div>
         {% endif %}
-        {% endif %}
 
+        <!-- Medical Disclaimer -->
+        <div class="disclaimer-card">
+            <div class="disclaimer-icon">
+                <i class="fas fa-info-circle"></i>
+            </div>
+            <div class="disclaimer-content">
+                <h4>Important Medical Disclaimer</h4>
+                <p>This analysis is for informational purposes only and should not replace professional medical advice. Please consult with a qualified healthcare provider for proper diagnosis and treatment.</p>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="{{ url_for('features') }}" class="action-btn primary">
+                <i class="fas fa-redo"></i>
+                New Analysis
+            </a>
+            <button onclick="window.print()" class="action-btn secondary">
+                <i class="fas fa-print"></i>
+                Print Results
+            </button>
+            <button onclick="shareResults()" class="action-btn secondary">
+                <i class="fas fa-share"></i>
+                Share Results
+            </button>
+        </div>
+
+        <!-- Recommendations -->
         <div class="recommendations-section">
-            <h3><i class="fas fa-lightbulb"></i> Recommendations</h3>
+            <h3><i class="fas fa-lightbulb"></i> Medical Recommendations</h3>
             <div class="recommendations-grid">
                 <div class="recommendation-card">
-                    <i class="fas fa-user-md"></i>
+                    <div class="rec-icon">
+                        <i class="fas fa-user-md"></i>
+                    </div>
                     <h4>Consult a Doctor</h4>
                     <p>Schedule an appointment with a pulmonologist for professional evaluation</p>
                 </div>
                 <div class="recommendation-card">
-                    <i class="fas fa-heartbeat"></i>
+                    <div class="rec-icon">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
                     <h4>Regular Checkups</h4>
                     <p>Maintain regular health screenings and follow-up appointments</p>
                 </div>
                 <div class="recommendation-card">
-                    <i class="fas fa-leaf"></i>
+                    <div class="rec-icon">
+                        <i class="fas fa-leaf"></i>
+                    </div>
                     <h4>Healthy Lifestyle</h4>
                     <p>Maintain a balanced diet, exercise regularly, and avoid smoking</p>
                 </div>
                 <div class="recommendation-card">
-                    <i class="fas fa-shield-alt"></i>
+                    <div class="rec-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
                     <h4>Risk Reduction</h4>
                     <p>Minimize exposure to pollutants and occupational hazards</p>
                 </div>
             </div>
         </div>
+
+        {% endif %}
     </div>
 </div>
 
 <script>
-    function shareResults() {
-        if (navigator.share) {
-            navigator.share({
-                title: 'Lung Cancer Analysis Results',
-                text: 'Check out my lung cancer risk analysis results from LungCare AI',
-                url: window.location.href
-            });
-        } else {
-            // Fallback for browsers that don't support Web Share API
-            const url = window.location.href;
-            navigator.clipboard.writeText(url).then(() => {
-                alert('Results URL copied to clipboard!');
-            });
-        }
+function shareResults() {
+    if (navigator.share) {
+        navigator.share({
+            title: 'Lung Cancer Analysis Results',
+            text: 'Check out my lung cancer risk analysis results from LungCare AI',
+            url: window.location.href
+        });
+    } else {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+            alert('Results URL copied to clipboard!');
+        });
     }
+}
+
+// Animate elements on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate progress bars
+    const progressBars = document.querySelectorAll('.prob-fill, .confidence-fill');
+    progressBars.forEach((bar, index) => {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => {
+            bar.style.width = width;
+        }, 500 + (index * 200));
+    });
+
+    // Add entrance animations
+    const cards = document.querySelectorAll('.patient-card, .risk-assessment-card, .models-section, .factors-section, .recommendations-section');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.6s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 150);
+    });
+});
 </script>
+
+<style>
+/* Modern Result Page Styles */
+.modern-result-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.modern-result-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="medical" width="40" height="40" patternUnits="userSpaceOnUse"><circle cx="20" cy="20" r="1.5" fill="rgba(255,255,255,0.1)"/><path d="M15 20h10M20 15v10" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23medical)"/></svg>');
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.header-icon {
+    width: 4rem;
+    height: 4rem;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.header-text h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.header-text p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.modern-result-container {
+    padding: 3rem 0;
+    background: #f8fafc;
+    min-height: 100vh;
+}
+
+/* Patient Card */
+.patient-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border-left: 4px solid #667eea;
+}
+
+.patient-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.patient-avatar {
+    width: 4rem;
+    height: 4rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+}
+
+.patient-info h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+}
+
+.patient-details {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.patient-details span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.patient-details i {
+    color: #667eea;
+}
+
+/* Risk Assessment Card */
+.risk-assessment-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.assessment-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.assessment-header h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+}
+
+.assessment-subtitle {
+    color: #6b7280;
+    font-size: 1.1rem;
+}
+
+.risk-level-section {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.risk-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 2rem;
+    border-radius: 2rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.risk-badge.high-risk {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #dc2626;
+    border: 2px solid #dc2626;
+}
+
+.risk-badge.medium-risk {
+    background: linear-gradient(135deg, #fef3c7, #fed7aa);
+    color: #d97706;
+    border: 2px solid #f59e0b;
+}
+
+.risk-badge.low-risk {
+    background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+    color: #16a34a;
+    border: 2px solid #22c55e;
+}
+
+/* Probability Display */
+.probability-display {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.prob-item {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e5e7eb;
+}
+
+.prob-item.safe-item {
+    border-left: 4px solid #22c55e;
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+}
+
+.prob-item.danger-item {
+    border-left: 4px solid #ef4444;
+    background: linear-gradient(135deg, #fef2f2, #fee2e2);
+}
+
+.prob-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.prob-header i {
+    font-size: 1.2rem;
+}
+
+.safe-item .prob-header {
+    color: #16a34a;
+}
+
+.danger-item .prob-header {
+    color: #dc2626;
+}
+
+.prob-percentage {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.safe-item .prob-percentage {
+    color: #16a34a;
+}
+
+.danger-item .prob-percentage {
+    color: #dc2626;
+}
+
+.prob-bar {
+    height: 0.75rem;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.prob-fill {
+    height: 100%;
+    border-radius: 0.375rem;
+    transition: width 1.5s ease;
+}
+
+.safe-fill {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+
+.danger-fill {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+/* Models Section */
+.models-section {
+    margin-bottom: 2rem;
+}
+
+.models-section h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.models-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.model-card {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.model-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.model-card.disabled {
+    opacity: 0.6;
+    background: #f9fafb;
+}
+
+.model-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.model-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+}
+
+.model-icon.xgb {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.model-icon.cnn {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+}
+
+.model-info h4 {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.model-info p {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.model-status {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.model-status.high {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.model-status.medium {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.model-status.low {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.model-status.disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+}
+
+.model-probabilities {
+    font-size: 0.9rem;
+}
+
+.prob-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.safe-text {
+    color: #16a34a;
+    font-weight: 600;
+}
+
+.danger-text {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+/* Image Section */
+.image-section {
+    margin-bottom: 2rem;
+}
+
+.image-section h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.image-container {
+    background: white;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    text-align: center;
+}
+
+.medical-image {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Factors Section */
+.factors-section {
+    margin-bottom: 2rem;
+}
+
+.factors-section h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.factors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.factors-card {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
+}
+
+.factors-card h4 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.risk-factors-card h4 {
+    color: #dc2626;
+}
+
+.protective-factors-card h4 {
+    color: #16a34a;
+}
+
+.factors-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.factor-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.risk-tag {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.protective-tag {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.no-factors {
+    color: #6b7280;
+    font-style: italic;
+    padding: 1rem;
+    text-align: center;
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    width: 100%;
+}
+
+/* Single Analysis Card */
+.single-analysis-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.analysis-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.analysis-icon {
+    width: 4rem;
+    height: 4rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.analysis-title h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.analysis-title p {
+    color: #6b7280;
+}
+
+.image-analysis-result {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+
+.analyzed-image-container {
+    text-align: center;
+}
+
+.analyzed-image {
+    max-width: 100%;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.confidence-display h4 {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.confidence-bar {
+    position: relative;
+    height: 2rem;
+    background: #e5e7eb;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.confidence-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    border-radius: 1rem;
+    transition: width 1.5s ease;
+}
+
+.confidence-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: 600;
+    color: #1f2937;
+}
+
+/* Disclaimer */
+.disclaimer-card {
+    background: linear-gradient(135deg, #fef3c7, #fed7aa);
+    border: 2px solid #f59e0b;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.disclaimer-icon {
+    color: #d97706;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.disclaimer-content h4 {
+    color: #d97706;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.disclaimer-content p {
+    color: #92400e;
+    line-height: 1.6;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-btn.primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.action-btn.primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.action-btn.secondary {
+    background: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+
+.action-btn.secondary:hover {
+    background: #f9fafb;
+    transform: translateY(-2px);
+}
+
+/* Recommendations */
+.recommendations-section {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.recommendations-section h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.recommendation-card {
+    background: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    border: 1px solid #e5e7eb;
+}
+
+.recommendation-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.rec-icon {
+    width: 3rem;
+    height: 3rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+    margin: 0 auto 1rem;
+}
+
+.recommendation-card h4 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+}
+
+.recommendation-card p {
+    color: #6b7280;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Error State */
+.error-state {
+    background: white;
+    border-radius: 1rem;
+    padding: 3rem;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 2px solid #ef4444;
+}
+
+.error-state .error-icon {
+    font-size: 4rem;
+    color: #ef4444;
+    margin-bottom: 1rem;
+}
+
+.error-state h3 {
+    color: #ef4444;
+    margin-bottom: 1rem;
+}
+
+.retry-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #ef4444;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 1rem;
+    transition: all 0.3s ease;
+}
+
+.retry-btn:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .patient-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .patient-details {
+        justify-content: center;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .models-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .factors-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .image-analysis-result {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .recommendations-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 {% endblock %}
